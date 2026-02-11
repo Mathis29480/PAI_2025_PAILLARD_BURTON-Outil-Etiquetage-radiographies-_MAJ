@@ -1,25 +1,41 @@
-"""This module serves as a basis for your project. You can either use NiceGUI
-or Pyside to start.
-
-The project assumes that your main entrypoint is the function run() of this file
-(see pyproject.toml scripts)
-"""
+"""Point d'entrée Qt (PySide6) pour l'outil d'étiquetage de radiographies."""
 
 import sys
 
-import numpy as np
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QApplication, QDialog, QMainWindow
 
-from pai_2025_outil_etiquetage_radiographies.my_module import typed_function
+from pai_2025_outil_etiquetage_radiographies.auth_dialog import AuthDialog
+from pai_2025_outil_etiquetage_radiographies.data_manager import DataManager
 
 
-def run():
+class MainWindow(QMainWindow):
+    """Fenêtre principale de l'application."""
+
+    def __init__(self, data_manager: DataManager, current_user: str) -> None:
+        super().__init__()
+        self.data_manager = data_manager
+        self.current_user = current_user
+        self.init_ui()
+
+    def init_ui(self) -> None:
+        """Initialise l'interface (titre et taille)."""
+        self.setWindowTitle("Outil d'étiquetage de radiographies")
+        self.setGeometry(100, 100, 1400, 900)
+
+
+def run() -> None:
+    """Lance l'application Qt."""
     app = QApplication(sys.argv)
 
-    widget = QWidget()
-    widget.setWindowTitle("Hello World")
-    widget.show()
+    auth_dialog = AuthDialog()
+    if auth_dialog.exec() != QDialog.DialogCode.Accepted:
+        sys.exit(0)
 
-    app.exec()
-    typed_function(np.zeros(10), "")
-    """This is the main function that gets run"""
+    current_user = auth_dialog.get_user()
+    if not current_user:
+        sys.exit(0)
+
+    data_manager = DataManager()
+    window = MainWindow(data_manager, current_user)
+    window.show()
+    sys.exit(app.exec())
