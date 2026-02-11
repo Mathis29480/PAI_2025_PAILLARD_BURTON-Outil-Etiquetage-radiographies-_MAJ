@@ -4,9 +4,12 @@ Gestionnaire de données pour l'outil d'étiquetage de radiographies.
 """
 
 import csv
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from PIL import Image, ImageDraw, ImageFont
+from PySide6.QtGui import QColor
 from typing import List, Dict, Optional
 
 
@@ -54,6 +57,131 @@ class DataManager:
         bbox_files = list(root_for_csv.glob("**/BBox_List_2017.csv"))
         if bbox_files:
             self._load_bbox_from_csv(bbox_files[0])
+
+        self._load_existing_annotations()
+
+    def _load_existing_annotations(self) -> None:
+        """Charge les annotations existantes depuis le dossier annotations."""
+        for img_path in self.images:
+            annotation_file = self.annotations_dir / f"{Path(img_path).stem}.json"
+            if annotation_file.exists():
+                try:
+                    with open(annotation_file, encoding="utf-8") as f:
+                        data = json.load(f)
+                        annotations = data.get("annotations", [])
+                        for ann in annotations:
+                            if "color" in ann and isinstance(ann["color"], dict):
+                                c = ann["color"]
+                                ann["color"] = QColor(
+                                    c.get("r", 255),
+                                    c.get("g", 0),
+                                    c.get("b", 0),
+                                    c.get("a", 255),
+                                )
+                        self.annotations[str(img_path)] = annotations
+                except Exception as e:
+                    print(f"Erreur lors du chargement des annotations pour {img_path}: {e}")
+                    self.annotations[str(img_path)] = []
+            else:
+                self.annotations[str(img_path)] = []
+
+    def save_annotations(self, image_path: str) -> None:
+        """Sauvegarde les annotations d'une image en JSON."""
+        if image_path not in self.annotations:
+            return
+        serializable_annotations = []
+        for ann in self.annotations[image_path]:
+            ann_copy = ann.copy()
+            if "color" in ann_copy:
+                color = ann_copy["color"]
+                if hasattr(color, "red"):
+                    ann_copy["color"] = {
+                        "r": color.red(),
+                        "g": color.green(),
+                        "b": color.blue(),
+                        "a": color.alpha(),
+                    }
+            serializable_annotations.append(ann_copy)
+        annotation_file = self.annotations_dir / f"{Path(image_path).stem}.json"
+        data = {
+            "image_path": image_path,
+            "metadata": self.metadata.get(image_path, {}),
+            "annotations": serializable_annotations,
+            "last_modified": datetime.now().isoformat(),
+        }
+        with open(annotation_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        if serializable_annotations:
+            self._generate_reference_image(image_path, serializable_annotations)
+
+    def _generate_reference_image(self, image_path: str, annotations: List[Dict]) -> None:
+        """Génère une image de référence avec les annotations dessinées."""
+        try:
+            img = Image.open(image_path).convert("RGB")
+            draw = ImageDraw.Draw(img)
+            colors = {
+                "Atelectasis": (255, 0, 0),
+                "Cardiomegaly": (0, 255, 0),
+                "Effusion": (0, 0, 255),
+                "Infiltration": (255, 255, 0),
+                "Mass": (255, 0, 255),
+                "Nodule": (0, 255, 255),
+                "Pneumonia": (255, 165, 0),
+                "Pneumothorax": (255, 20, 147),
+                "Consolidation": (128, 0, 128),
+                "Edema": (0, 128, 255),
+                "Emphysema": (128, 255, 0),
+                "Fibrosis": (255, 128, 0),
+                "Pleural_Thickening": (128, 128, 255),
+                "Hernia": (255, 128, 128),
+                "No Finding": (128, 128, 128),
+            }
+            pathologies_in_image = set()
+            for ann in annotations:
+                if ann.get("type") != "box":
+                    continue
+                x = int(ann.get("x", 0))
+                y = int(ann.get("y", 0))
+                w = int(ann.get("width", 0))
+                h = int(ann.get("height", 0))
+                pathology = ann.get("pathology", "Unknown")
+                pathologies_in_image.add(pathology)
+                if pathology in colors:
+                    color = colors[pathology]
+                elif isinstance(ann.get("color"), dict):
+                    c = ann["color"]
+                    color = (c.get("r", 255), c.get("g", 0), c.get("b", 0))
+                else:
+                    color = (255, 0, 0)
+                draw.rectangle([x, y, x + w, y + h], outline=color, width=3)
+                try:
+                    try:
+                        font = ImageFont.truetype(
+                            "/System/Library/Fonts/Helvetica.ttc", 16
+                        )
+                    except OSError:
+                        font = ImageFont.load_default()
+                    label = pathology
+                    if ann.get("author"):
+                        label += f" ({ann['author']})"
+                    bbox = draw.textbbox((x, y - 20), label, font=font)
+                    bbox = (bbox[0] - 2, bbox[1] - 2, bbox[2] + 2, bbox[3] + 2)
+                    draw.rectangle(bbox, fill=(0, 0, 0))
+                    draw.text((x, y - 20), label, fill=color, font=font)
+                except Exception:
+                    pass
+            image_stem = Path(image_path).stem
+            for pathology in pathologies_in_image:
+                if pathology and pathology != "Unknown":
+                    pathology_dir = self.reference_images_dir / pathology
+                    pathology_dir.mkdir(exist_ok=True)
+                    output_path = pathology_dir / f"{image_stem}_annotated.png"
+                    img.save(output_path, "PNG")
+            if not pathologies_in_image or all(p == "Unknown" for p in pathologies_in_image):
+                output_path = self.reference_images_dir / f"{image_stem}_annotated.png"
+                img.save(output_path, "PNG")
+        except Exception as e:
+            print(f"Erreur lors de la génération de l'image de référence: {e}")
 
     def _load_bbox_from_csv(self, csv_path: Path) -> None:
         """Charge les bounding boxes NIH comme annotations initiales."""
