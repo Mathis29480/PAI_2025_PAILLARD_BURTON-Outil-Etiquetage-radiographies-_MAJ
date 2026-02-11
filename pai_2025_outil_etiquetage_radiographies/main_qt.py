@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pai_2025_outil_etiquetage_radiographies.annotations_tab import AnnotationsTab
 from pai_2025_outil_etiquetage_radiographies.auth_dialog import AuthDialog
 from pai_2025_outil_etiquetage_radiographies.data_manager import DataManager
 from pai_2025_outil_etiquetage_radiographies.visualization_tab import VisualizationTab
@@ -38,11 +39,7 @@ class MainWindow(QMainWindow):
         self.visualization_tab = VisualizationTab(self.data_manager, self.current_user)
         self.tab_widget.addTab(self.visualization_tab, "Visualisation")
 
-        placeholder_ann = QWidget()
-        layout_ann = QVBoxLayout()
-        layout_ann.addWidget(QLabel("Annotations — à venir"))
-        placeholder_ann.setLayout(layout_ann)
-        self.annotations_tab = placeholder_ann
+        self.annotations_tab = AnnotationsTab(self.data_manager, self.current_user)
         self.tab_widget.addTab(self.annotations_tab, "Annotations")
 
         self.create_menu_bar()
@@ -58,13 +55,17 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+E"), self).activated.connect(self._export_annotations)
 
     def _save_current(self) -> None:
-        pass  # Phase 4 (AnnotationsTab)
+        if hasattr(self.annotations_tab, "save_annotations"):
+            self.annotations_tab.save_annotations()
+        self.statusBar().showMessage("Annotations sauvegardées", 2000)
 
     def _undo(self) -> None:
-        pass  # Phase 4
+        if hasattr(self.annotations_tab, "undo"):
+            self.annotations_tab.undo()
 
     def _redo(self) -> None:
-        pass  # Phase 4
+        if hasattr(self.annotations_tab, "redo"):
+            self.annotations_tab.redo()
 
     def create_menu_bar(self) -> None:
         """Crée la barre de menu (Fichier, Outils, Aide)."""
