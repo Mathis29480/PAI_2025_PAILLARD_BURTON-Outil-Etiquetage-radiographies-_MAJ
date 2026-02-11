@@ -45,6 +45,70 @@ class MainWindow(QMainWindow):
         placeholder_ann.setLayout(layout_ann)
         self.tab_widget.addTab(placeholder_ann, "Annotations")
 
+        self.create_menu_bar()
+
+    def create_menu_bar(self) -> None:
+        """Crée la barre de menu (Fichier, Outils, Aide)."""
+        menubar = self.menuBar()
+
+        file_menu = menubar.addMenu("Fichier")
+        file_menu.addAction("Charger un dataset").triggered.connect(self._load_dataset)
+        file_menu.addAction("Recharger le dataset (nouvelles images)").triggered.connect(
+            self._reload_dataset
+        )
+        file_menu.addSeparator()
+        file_menu.addAction("Exporter les annotations").triggered.connect(
+            self._export_annotations
+        )
+        file_menu.addAction("Importer des annotations").triggered.connect(
+            self._import_annotations
+        )
+        file_menu.addSeparator()
+        file_menu.addAction("Quitter").triggered.connect(self.close)
+
+        tools_menu = menubar.addMenu("Outils")
+        tools_menu.addAction("Statistiques").triggered.connect(self._show_stats)
+        tools_menu.addSeparator()
+        tools_menu.addAction(
+            "Exporter co-occurrence (depuis le dataset chargé)"
+        ).triggered.connect(self._export_cooccurrence)
+        tools_menu.addAction(
+            "Co-occurrence à partir d'un CSV"
+        ).triggered.connect(self._export_cooccurrence_from_csv)
+        tools_menu.addAction(
+            "Générer rapport exemples de localisation (HTML)"
+        ).triggered.connect(self._export_localization_report)
+
+        help_menu = menubar.addMenu("Aide")
+        help_menu.addAction("À propos").triggered.connect(self._show_about)
+
+    def _load_dataset(self) -> None:
+        pass  # Phase 5
+
+    def _reload_dataset(self) -> None:
+        pass  # Phase 5
+
+    def _export_annotations(self) -> None:
+        pass  # Phase 5
+
+    def _import_annotations(self) -> None:
+        pass  # Phase 5
+
+    def _show_stats(self) -> None:
+        pass  # Phase 6
+
+    def _export_cooccurrence(self) -> None:
+        pass  # Phase 6
+
+    def _export_cooccurrence_from_csv(self) -> None:
+        pass  # Phase 6
+
+    def _export_localization_report(self) -> None:
+        pass  # Phase 6
+
+    def _show_about(self) -> None:
+        pass  # Phase 6
+
 
 def run() -> None:
     """Lance l'application Qt."""
