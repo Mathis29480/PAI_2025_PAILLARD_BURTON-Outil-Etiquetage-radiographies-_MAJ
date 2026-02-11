@@ -1,6 +1,6 @@
 ## PAI 2025 - Outil d'étiquetage de radiographies
 
-Outil de visualisation et d'annotation de radiographies (bounding boxes par pathologie), avec export JSON/CSV/COCO/YOLO, statistiques et rapports de co-occurrence.
+Outil de visualisation et d'annotation de radiographies (bounding boxes par pathologie), avec export JSON/CSV, statistiques et rapports de co-occurrence.
 
 Projet initialisé avec [supop-pai-cookiecutter-template](https://github.com/ClementPinard/supop-pai-cookiecuttter-template).
 
