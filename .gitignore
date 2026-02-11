@@ -61,3 +61,6 @@ Thumbs.db
 
 # specific to this project
 jobs_dir/
+users.json
+annotations/
+annotations_visualized/
