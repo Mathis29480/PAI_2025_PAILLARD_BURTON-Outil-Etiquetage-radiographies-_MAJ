@@ -5,9 +5,13 @@ import sys
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QDialog,
+    QDialogButtonBox,
+    QFileDialog,
     QLabel,
     QMainWindow,
+    QMessageBox,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -103,16 +107,74 @@ class MainWindow(QMainWindow):
         help_menu.addAction("À propos").triggered.connect(self._show_about)
 
     def _load_dataset(self) -> None:
-        pass  # Phase 5
+        folder = QFileDialog.getExistingDirectory(self, "Sélectionner le dossier du dataset")
+        if folder:
+            self.data_manager.load_dataset(folder)
+            self.visualization_tab.refresh_data()
+            self.statusBar().showMessage(f"Dataset chargé depuis: {folder}")
 
     def _reload_dataset(self) -> None:
-        pass  # Phase 5
+        if not self.data_manager.dataset_path or not self.data_manager.dataset_path.exists():
+            QMessageBox.information(
+                self,
+                "Recharger",
+                "Aucun dataset chargé. Utilisez Fichier > Charger un dataset d'abord.",
+            )
+            return
+        folder = str(self.data_manager.dataset_path)
+        self.data_manager.load_dataset(folder)
+        self.visualization_tab.refresh_data()
+        n = len(self.data_manager.images)
+        self.statusBar().showMessage(f"Dataset rechargé : {n} image(s)")
 
     def _export_annotations(self) -> None:
-        pass  # Phase 5
+        formats = ["JSON", "CSV", "COCO", "YOLO"]
+        format_dialog = QDialog(self)
+        format_dialog.setWindowTitle("Format d'export")
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Format:"))
+        format_combo = QComboBox()
+        format_combo.addItems(formats)
+        layout.addWidget(format_combo)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(format_dialog.accept)
+        buttons.rejected.connect(format_dialog.reject)
+        layout.addWidget(buttons)
+        format_dialog.setLayout(layout)
+        if format_dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        format_type = format_combo.currentText()
+        filename, _ = QFileDialog.getSaveFileName(
+            self,
+            f"Exporter en {format_type}",
+            "",
+            f"{format_type} Files (*.{format_type.lower()})",
+        )
+        if filename:
+            self.data_manager.export_annotations(filename, format_type)
+            QMessageBox.information(
+                self, "Succès", f"Annotations exportées en {format_type}"
+            )
 
     def _import_annotations(self) -> None:
-        pass  # Phase 5
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Importer des annotations",
+            "",
+            "Fichiers supportés (*.json *.csv);;JSON (*.json);;CSV (*.csv)",
+        )
+        if filename:
+            try:
+                self.data_manager.import_annotations(filename)
+                if hasattr(self.annotations_tab, "refresh_annotations"):
+                    self.annotations_tab.refresh_annotations()
+                QMessageBox.information(self, "Succès", "Annotations importées avec succès")
+            except Exception as e:
+                QMessageBox.critical(
+                    self, "Erreur", f"Erreur lors de l'import: {str(e)}"
+                )
 
     def _show_stats(self) -> None:
         pass  # Phase 6
