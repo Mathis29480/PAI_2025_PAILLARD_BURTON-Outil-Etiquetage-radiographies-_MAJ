@@ -1,28 +1,34 @@
-## PAI 2025 - Outil Etiquetage Radiographies
+## PAI 2025 - Outil d'étiquetage de radiographies
 
-This project was started with [supopo-pai-cookiecutter-template](https://github.com/ClementPinard/supop-pai-cookiecuttter-template/tree/main)
+Outil de visualisation et d'annotation de radiographies (bounding boxes par pathologie), avec export JSON/CSV/COCO/YOLO, statistiques et rapports de co-occurrence.
 
-## How to run
+Projet initialisé avec [supop-pai-cookiecutter-template](https://github.com/ClementPinard/supop-pai-cookiecuttter-template).
 
-⚠️ Chose one of the two method below, and remove the other one.
+**Auteurs :** Mathis Paillard, Cristobal Burton Selva.
 
-### How to run with NiceGUI
+## Installation
 
-```bash
-uv run main_ng
-```
-
-You can also run in development mode, which will reload the interface when it see code
-changes.
+- Installer [uv](https://docs.astral.sh/uv/getting-started/installation/).
+- Cloner le dépôt puis :
 
 ```bash
-uv run python pai_2025_outil_etiquetage_radiographies/main_nicegui.py
+uv sync
 ```
 
-### How to run with PySide
+Sur macOS 12 (x86_64), PySide6 est contraint à une version &lt; 6.10 pour la compatibilité des wheels.
+
+## Lancer l'application (interface Qt)
 
 ```bash
 uv run main_qt
+```
+
+Après connexion (auth), charger un dataset via **Fichier > Charger un dataset** (dossier contenant des images et optionnellement un CSV type Data_Entry). Les onglets **Visualisation** et **Annotations** permettent de parcourir les images, filtrer, dessiner des bounding boxes par pathologie, sauvegarder (Ctrl+S), annuler/refaire (Ctrl+Z / Ctrl+Shift+Z).
+
+### Alternative : NiceGUI
+
+```bash
+uv run main_ng
 ```
 
 ## Development
