@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from pai_2025_outil_etiquetage_radiographies.auth_dialog import AuthDialog
 from pai_2025_outil_etiquetage_radiographies.data_manager import DataManager
+from pai_2025_outil_etiquetage_radiographies.visualization_tab import VisualizationTab
 
 
 class MainWindow(QMainWindow):
@@ -34,17 +35,15 @@ class MainWindow(QMainWindow):
         self.tab_widget = QTabWidget()
         self.setCentralWidget(self.tab_widget)
 
-        placeholder_viz = QWidget()
-        layout_viz = QVBoxLayout()
-        layout_viz.addWidget(QLabel("Visualisation — à venir"))
-        placeholder_viz.setLayout(layout_viz)
-        self.tab_widget.addTab(placeholder_viz, "Visualisation")
+        self.visualization_tab = VisualizationTab(self.data_manager, self.current_user)
+        self.tab_widget.addTab(self.visualization_tab, "Visualisation")
 
         placeholder_ann = QWidget()
         layout_ann = QVBoxLayout()
         layout_ann.addWidget(QLabel("Annotations — à venir"))
         placeholder_ann.setLayout(layout_ann)
-        self.tab_widget.addTab(placeholder_ann, "Annotations")
+        self.annotations_tab = placeholder_ann
+        self.tab_widget.addTab(self.annotations_tab, "Annotations")
 
         self.create_menu_bar()
         self.setup_shortcuts()
