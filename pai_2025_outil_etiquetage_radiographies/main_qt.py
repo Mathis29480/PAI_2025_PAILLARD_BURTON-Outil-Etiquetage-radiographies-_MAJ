@@ -1,6 +1,7 @@
 """Point d'entrée Qt (PySide6) pour l'outil d'étiquetage de radiographies."""
 
 import sys
+from pathlib import Path
 
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
@@ -17,9 +18,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pai_2025_outil_etiquetage_radiographies import analysis_export
+
 from pai_2025_outil_etiquetage_radiographies.annotations_tab import AnnotationsTab
 from pai_2025_outil_etiquetage_radiographies.auth_dialog import AuthDialog
 from pai_2025_outil_etiquetage_radiographies.data_manager import DataManager
+from pai_2025_outil_etiquetage_radiographies.stats_dialog import StatsDialog
 from pai_2025_outil_etiquetage_radiographies.visualization_tab import VisualizationTab
 
 
@@ -177,19 +181,84 @@ class MainWindow(QMainWindow):
                 )
 
     def _show_stats(self) -> None:
-        pass  # Phase 6
+        StatsDialog(self.data_manager, self).exec()
 
     def _export_cooccurrence(self) -> None:
-        pass  # Phase 6
+        if not self.data_manager.images:
+            QMessageBox.information(
+                self, "Analyse", "Chargez d'abord un dataset (avec le CSV Data_Entry)."
+            )
+            return
+        folder = QFileDialog.getExistingDirectory(
+            self, "Dossier pour enregistrer (CSV + heatmap)"
+        )
+        if not folder:
+            return
+        folder = Path(folder)
+        csv_path = folder / "cooccurrence_pathologies.csv"
+        png_path = folder / "cooccurrence_heatmap.png"
+        try:
+            analysis_export.export_cooccurrence_csv(
+                self.data_manager, str(csv_path), from_csv_only=True
+            )
+            ok = analysis_export.export_cooccurrence_heatmap(
+                self.data_manager, str(png_path), from_csv_only=True
+            )
+            msg = f"Matrice (depuis le CSV du dataset) :\n{csv_path}\n"
+            msg += f"Heatmap :\n{png_path}" if ok else "Heatmap : installez matplotlib."
+            QMessageBox.information(self, "Co-occurrence", msg)
+        except Exception as e:
+            QMessageBox.critical(self, "Erreur", str(e))
 
     def _export_cooccurrence_from_csv(self) -> None:
-        pass  # Phase 6
+        csv_path, _ = QFileDialog.getOpenFileName(
+            self, "Choisir le CSV", "", "CSV (*.csv);;Tous (*)"
+        )
+        if not csv_path:
+            return
+        folder = QFileDialog.getExistingDirectory(
+            self, "Dossier pour enregistrer (CSV + heatmap)"
+        )
+        if not folder:
+            return
+        try:
+            csv_out, png_out = analysis_export.export_cooccurrence_from_csv_file(
+                csv_path, folder
+            )
+            msg = f"Matrice exportée :\n{csv_out}\n"
+            msg += f"Heatmap :\n{png_out}" if png_out else "Heatmap : installez matplotlib."
+            QMessageBox.information(self, "Co-occurrence depuis CSV", msg)
+        except Exception as e:
+            QMessageBox.critical(self, "Erreur", str(e))
 
     def _export_localization_report(self) -> None:
-        pass  # Phase 6
+        if not self.data_manager.images:
+            QMessageBox.information(self, "Rapport", "Chargez d'abord un dataset.")
+            return
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Enregistrer le rapport", "exemples_localisation.html", "HTML (*.html)"
+        )
+        if not path:
+            return
+        try:
+            analysis_export.export_localization_report(self.data_manager, path)
+            QMessageBox.information(
+                self,
+                "Rapport",
+                f"Rapport généré :\n{path}\n\nOuvre-le dans un navigateur.",
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Erreur", str(e))
 
     def _show_about(self) -> None:
-        pass  # Phase 6
+        QMessageBox.about(
+            self,
+            "À propos",
+            "Outil d'étiquetage de radiographies in-house\n\n"
+            "Auteurs: Mathis Paillard - Cristobal Burton Selva\n\n"
+            "Outil de visualisation et d'annotation de radiographies\n"
+            "pour la recherche et l'entraînement de modèles d'IA.",
+        )
 
 
 def run() -> None:
