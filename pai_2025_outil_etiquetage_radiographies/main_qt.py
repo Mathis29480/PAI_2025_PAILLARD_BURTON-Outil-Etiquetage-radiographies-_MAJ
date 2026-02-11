@@ -2,7 +2,15 @@
 
 import sys
 
-from PySide6.QtWidgets import QApplication, QDialog, QMainWindow
+from PySide6.QtWidgets import (
+    QApplication,
+    QDialog,
+    QLabel,
+    QMainWindow,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from pai_2025_outil_etiquetage_radiographies.auth_dialog import AuthDialog
 from pai_2025_outil_etiquetage_radiographies.data_manager import DataManager
@@ -18,9 +26,24 @@ class MainWindow(QMainWindow):
         self.init_ui()
 
     def init_ui(self) -> None:
-        """Initialise l'interface (titre et taille)."""
+        """Initialise l'interface (titre, taille, onglets)."""
         self.setWindowTitle("Outil d'étiquetage de radiographies")
         self.setGeometry(100, 100, 1400, 900)
+
+        self.tab_widget = QTabWidget()
+        self.setCentralWidget(self.tab_widget)
+
+        placeholder_viz = QWidget()
+        layout_viz = QVBoxLayout()
+        layout_viz.addWidget(QLabel("Visualisation — à venir"))
+        placeholder_viz.setLayout(layout_viz)
+        self.tab_widget.addTab(placeholder_viz, "Visualisation")
+
+        placeholder_ann = QWidget()
+        layout_ann = QVBoxLayout()
+        layout_ann.addWidget(QLabel("Annotations — à venir"))
+        placeholder_ann.setLayout(layout_ann)
+        self.tab_widget.addTab(placeholder_ann, "Annotations")
 
 
 def run() -> None:
