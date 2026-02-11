@@ -2,6 +2,7 @@
 
 import sys
 
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -46,6 +47,25 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(placeholder_ann, "Annotations")
 
         self.create_menu_bar()
+        self.setup_shortcuts()
+
+        self.statusBar().showMessage(f"Connecté en tant que: {self.current_user}")
+
+    def setup_shortcuts(self) -> None:
+        """Raccourcis clavier (sauvegarde, undo, redo, export)."""
+        QShortcut(QKeySequence("Ctrl+S"), self).activated.connect(self._save_current)
+        QShortcut(QKeySequence("Ctrl+Z"), self).activated.connect(self._undo)
+        QShortcut(QKeySequence("Ctrl+Shift+Z"), self).activated.connect(self._redo)
+        QShortcut(QKeySequence("Ctrl+E"), self).activated.connect(self._export_annotations)
+
+    def _save_current(self) -> None:
+        pass  # Phase 4 (AnnotationsTab)
+
+    def _undo(self) -> None:
+        pass  # Phase 4
+
+    def _redo(self) -> None:
+        pass  # Phase 4
 
     def create_menu_bar(self) -> None:
         """Crée la barre de menu (Fichier, Outils, Aide)."""
