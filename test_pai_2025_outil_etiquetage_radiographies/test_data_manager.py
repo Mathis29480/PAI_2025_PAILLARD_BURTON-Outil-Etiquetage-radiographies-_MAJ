@@ -192,3 +192,29 @@ def test_get_cooccurrence_data(temp_dataset):
     assert "Atelectasis" in labels
     assert len(matrix) == 14
     assert all(len(row) == 14 for row in matrix)
+
+
+def test_import_csv(temp_dataset, tmp_path):
+    """Import depuis un CSV restaure les annotations."""
+    dm = DataManager()
+    dm.load_dataset(str(temp_dataset))
+    path_str = str(dm.images[0])
+    csv_path = tmp_path / "annotations.csv"
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["Image", "Pathology", "X", "Y", "Width", "Height", "Author", "Date", "Confidence"])
+        w.writerow([path_str, "Pneumonia", 5, 10, 20, 30, "test_user", "2025-01-01", "1.0"])
+    dm.import_annotations(str(csv_path))
+    annos = dm.get_image_annotations(path_str)
+    assert len(annos) == 1
+    assert annos[0]["pathology"] == "Pneumonia"
+    assert annos[0]["x"] == 5.0
+    assert annos[0]["width"] == 20.0
+
+
+def test_pathology_order_constant():
+    """PATHOLOGY_ORDER contient les 14 pathologies NIH."""
+    assert len(DataManager.PATHOLOGY_ORDER) == 14
+    assert "No Finding" not in DataManager.PATHOLOGY_ORDER
+    assert "Atelectasis" in DataManager.PATHOLOGY_ORDER
+    assert "Hernia" in DataManager.PATHOLOGY_ORDER
