@@ -1,0 +1,6 @@
+[
+  {"image_stem": "00000324_004", "annotations": [{"type": "box", "x": 180, "y": 320, "width": 220, "height": 190, "pathology": "Atelectasis"}]},
+  {"image_stem": "00000512_002", "annotations": [{"type": "box", "x": 200, "y": 350, "width": 200, "height": 170, "pathology": "Atelectasis"}]},
+  {"image_stem": "00000963_016", "annotations": [{"type": "box", "x": 150, "y": 300, "width": 250, "height": 200, "pathology": "Atelectasis"}]},
+  {"image_stem": "00000547_005", "annotations": [{"type": "box", "x": 231, "y": 375, "width": 287, "height": 158, "pathology": "Atelectasis"}]}
+]

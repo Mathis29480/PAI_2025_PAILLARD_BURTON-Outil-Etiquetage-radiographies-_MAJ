@@ -1,0 +1,5 @@
+[
+  {"image_stem": "00000324_004", "annotations": [{"type": "box", "x": 150, "y": 280, "width": 280, "height": 220, "pathology": "Edema"}]},
+  {"image_stem": "00000512_002", "annotations": [{"type": "box", "x": 160, "y": 290, "width": 270, "height": 210, "pathology": "Edema"}]},
+  {"image_stem": "00000963_016", "annotations": [{"type": "box", "x": 140, "y": 270, "width": 290, "height": 230, "pathology": "Edema"}]}
+]

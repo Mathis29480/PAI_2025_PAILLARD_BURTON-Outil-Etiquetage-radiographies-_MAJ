@@ -1,0 +1,6 @@
+[
+  {"image_stem": "00000324_004", "annotations": [{"type": "box", "x": 220, "y": 280, "width": 180, "height": 220, "pathology": "Pneumonia"}]},
+  {"image_stem": "00000512_002", "annotations": [{"type": "box", "x": 190, "y": 310, "width": 210, "height": 180, "pathology": "Pneumonia"}]},
+  {"image_stem": "00000963_016", "annotations": [{"type": "box", "x": 200, "y": 290, "width": 220, "height": 200, "pathology": "Pneumonia"}]},
+  {"image_stem": "00000547_005", "annotations": [{"type": "box", "x": 200, "y": 350, "width": 250, "height": 160, "pathology": "Pneumonia"}]}
+]

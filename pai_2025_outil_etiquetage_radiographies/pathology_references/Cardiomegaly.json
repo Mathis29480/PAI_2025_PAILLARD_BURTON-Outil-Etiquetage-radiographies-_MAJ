@@ -1,0 +1,5 @@
+[
+  {"image_stem": "00000324_004", "annotations": [{"type": "box", "x": 280, "y": 200, "width": 180, "height": 280, "pathology": "Cardiomegaly"}]},
+  {"image_stem": "00000512_002", "annotations": [{"type": "box", "x": 260, "y": 220, "width": 200, "height": 260, "pathology": "Cardiomegaly"}]},
+  {"image_stem": "00000547_005", "annotations": [{"type": "box", "x": 270, "y": 210, "width": 190, "height": 270, "pathology": "Cardiomegaly"}]}
+]

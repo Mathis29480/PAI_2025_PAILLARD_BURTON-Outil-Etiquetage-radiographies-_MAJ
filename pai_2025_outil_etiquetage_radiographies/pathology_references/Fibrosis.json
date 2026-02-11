@@ -1,0 +1,4 @@
+[
+  {"image_stem": "00000324_004", "annotations": [{"type": "box", "x": 180, "y": 310, "width": 240, "height": 200, "pathology": "Fibrosis"}]},
+  {"image_stem": "00000512_002", "annotations": [{"type": "box", "x": 200, "y": 330, "width": 220, "height": 180, "pathology": "Fibrosis"}]}
+]

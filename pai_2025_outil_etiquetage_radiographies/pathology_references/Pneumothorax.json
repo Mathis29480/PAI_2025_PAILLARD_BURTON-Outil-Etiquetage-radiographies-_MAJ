@@ -1,0 +1,5 @@
+[
+  {"image_stem": "00000324_004", "annotations": [{"type": "box", "x": 80, "y": 250, "width": 150, "height": 300, "pathology": "Pneumothorax"}]},
+  {"image_stem": "00000512_002", "annotations": [{"type": "box", "x": 400, "y": 260, "width": 140, "height": 280, "pathology": "Pneumothorax"}]},
+  {"image_stem": "00000963_016", "annotations": [{"type": "box", "x": 90, "y": 240, "width": 160, "height": 310, "pathology": "Pneumothorax"}]}
+]
