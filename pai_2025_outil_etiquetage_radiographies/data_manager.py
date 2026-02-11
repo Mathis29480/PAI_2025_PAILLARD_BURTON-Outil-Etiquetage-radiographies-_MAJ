@@ -51,6 +51,58 @@ class DataManager:
         else:
             self._generate_default_metadata()
 
+        bbox_files = list(root_for_csv.glob("**/BBox_List_2017.csv"))
+        if bbox_files:
+            self._load_bbox_from_csv(bbox_files[0])
+
+    def _load_bbox_from_csv(self, csv_path: Path) -> None:
+        """Charge les bounding boxes NIH comme annotations initiales."""
+        try:
+            with open(csv_path, encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    image_name = row.get("Image Index")
+                    if not image_name:
+                        continue
+                    image_path = self.dataset_path / image_name
+                    if not image_path.exists():
+                        image_path = self.dataset_path / "images" / image_name
+                    if not image_path.exists():
+                        continue
+                    key = str(image_path)
+                    if key not in self.annotations:
+                        self.annotations[key] = []
+                    try:
+                        bbox_str = row.get("Bbox [x,y,w,h]", "")
+                        if not bbox_str:
+                            continue
+                        parts = bbox_str.split(",")
+                        if len(parts) < 4:
+                            continue
+                        x, y, w, h = (
+                            float(parts[0]),
+                            float(parts[1]),
+                            float(parts[2]),
+                            float(parts[3]),
+                        )
+                    except (ValueError, TypeError) as e:
+                        print(f"Erreur parsing bbox pour {image_name}: {e}")
+                        continue
+                    pathology = row.get("Finding Label", "")
+                    self.annotations[key].append({
+                        "type": "box",
+                        "x": x,
+                        "y": y,
+                        "width": w,
+                        "height": h,
+                        "pathology": pathology,
+                        "author": "auto_bbox",
+                        "date": datetime.now().isoformat(),
+                        "confidence": 0.5,
+                    })
+        except Exception as e:
+            print(f"Erreur lors du chargement des bounding boxes: {e}")
+
     def _load_metadata_from_csv(self, csv_path: Path, root_for_csv: Path) -> None:
         """Charge les métadonnées depuis un fichier CSV (Data_Entry NIH)."""
         try:
