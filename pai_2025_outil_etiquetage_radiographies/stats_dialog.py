@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Dialogue de statistiques (générales, par pathologie, par auteur).
 """
@@ -23,7 +22,9 @@ if TYPE_CHECKING:
 class StatsDialog(QDialog):
     """Dialogue affichant les statistiques du dataset et des annotations."""
 
-    def __init__(self, data_manager: "DataManager", parent: QWidget | None = None) -> None:
+    def __init__(
+        self, data_manager: "DataManager", parent: QWidget | None = None
+    ) -> None:
         super().__init__(parent)
         self.data_manager = data_manager
         self.setWindowTitle("Statistiques")

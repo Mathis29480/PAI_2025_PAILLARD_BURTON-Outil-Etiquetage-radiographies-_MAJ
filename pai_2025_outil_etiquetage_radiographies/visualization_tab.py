@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Onglet de visualisation des radiographies.
 """
@@ -7,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from PIL import Image
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import QDate, Qt
 from PySide6.QtGui import QImage, QPixmap, QWheelEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -200,11 +199,26 @@ class VisualizationTab(QWidget):
         filters_layout = QVBoxLayout()
         filters_layout.addWidget(QLabel("Pathologie:"))
         self.pathology_filter = QComboBox()
-        self.pathology_filter.addItems([
-            "Toutes", "Atelectasis", "Cardiomegaly", "Effusion", "Infiltration",
-            "Mass", "Nodule", "Pneumonia", "Pneumothorax", "Consolidation",
-            "Edema", "Emphysema", "Fibrosis", "Pleural_Thickening", "Hernia", "No Finding",
-        ])
+        self.pathology_filter.addItems(
+            [
+                "Toutes",
+                "Atelectasis",
+                "Cardiomegaly",
+                "Effusion",
+                "Infiltration",
+                "Mass",
+                "Nodule",
+                "Pneumonia",
+                "Pneumothorax",
+                "Consolidation",
+                "Edema",
+                "Emphysema",
+                "Fibrosis",
+                "Pleural_Thickening",
+                "Hernia",
+                "No Finding",
+            ]
+        )
         filters_layout.addWidget(self.pathology_filter)
         filters_layout.addWidget(QLabel("Sexe:"))
         self.sex_filter = QComboBox()
@@ -262,9 +276,15 @@ class VisualizationTab(QWidget):
             "view": self.view_filter.currentText(),
             "age_min": self.age_min.value() if self.age_min.value() > 0 else None,
             "age_max": self.age_max.value() if self.age_max.value() < 120 else None,
-            "date_min": self.date_from.date().toString("yyyy-MM-dd") if self.date_from.date().isValid() else None,
-            "date_max": self.date_to.date().toString("yyyy-MM-dd") if self.date_to.date().isValid() else None,
-            "has_annotations": self.has_annotations_check.isChecked() if self.has_annotations_check.isChecked() else None,
+            "date_min": self.date_from.date().toString("yyyy-MM-dd")
+            if self.date_from.date().isValid()
+            else None,
+            "date_max": self.date_to.date().toString("yyyy-MM-dd")
+            if self.date_to.date().isValid()
+            else None,
+            "has_annotations": self.has_annotations_check.isChecked()
+            if self.has_annotations_check.isChecked()
+            else None,
         }
         self.filtered_images = self.data_manager.filter_images(filters)
         self.current_filter_index = 0
@@ -289,7 +309,9 @@ class VisualizationTab(QWidget):
         info_text += f"Sexe: {metadata.get('sex', 'N/A')}\n"
         info_text += f"Âge: {metadata.get('age', 'N/A')}\n"
         info_text += f"Vue: {metadata.get('view', 'N/A')}\n"
-        info_text += f"Pathologies: {', '.join(metadata.get('pathologies', [])) or 'Aucune'}\n"
+        info_text += (
+            f"Pathologies: {', '.join(metadata.get('pathologies', [])) or 'Aucune'}\n"
+        )
         info_text += f"Annotations: {len(annotations)}"
         self.patient_info.setText(info_text)
         self.image_info_label.setText(
@@ -299,22 +321,32 @@ class VisualizationTab(QWidget):
     def previous_image(self) -> None:
         """Image précédente."""
         if self.filtered_images:
-            self.current_filter_index = (self.current_filter_index - 1) % len(self.filtered_images)
+            self.current_filter_index = (self.current_filter_index - 1) % len(
+                self.filtered_images
+            )
             self.load_current_image()
 
     def next_image(self) -> None:
         """Image suivante."""
         if self.filtered_images:
-            self.current_filter_index = (self.current_filter_index + 1) % len(self.filtered_images)
+            self.current_filter_index = (self.current_filter_index + 1) % len(
+                self.filtered_images
+            )
             self.load_current_image()
 
     def go_to_annotations(self) -> None:
         """Passe à l'onglet Annotations et sélectionne l'image courante."""
-        if not self.filtered_images or not (0 <= self.current_filter_index < len(self.filtered_images)):
+        if not self.filtered_images or not (
+            0 <= self.current_filter_index < len(self.filtered_images)
+        ):
             return
         image_path = self.filtered_images[self.current_filter_index]
         try:
-            idx = next(i for i, img in enumerate(self.data_manager.images) if str(img) == image_path)
+            idx = next(
+                i
+                for i, img in enumerate(self.data_manager.images)
+                if str(img) == image_path
+            )
             self.data_manager.current_image_index = idx
         except StopIteration:
             pass
@@ -323,7 +355,9 @@ class VisualizationTab(QWidget):
             parent = parent.parent()
         if parent and hasattr(parent, "tab_widget"):
             parent.tab_widget.setCurrentIndex(1)
-            if hasattr(parent, "annotations_tab") and hasattr(parent.annotations_tab, "load_image"):
+            if hasattr(parent, "annotations_tab") and hasattr(
+                parent.annotations_tab, "load_image"
+            ):
                 parent.annotations_tab.load_image(image_path)
 
     def _on_zoom_changed(self, value: int) -> None:

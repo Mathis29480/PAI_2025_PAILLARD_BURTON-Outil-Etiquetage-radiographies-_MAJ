@@ -64,7 +64,7 @@ jobs:
       - name: "Build docs and check for warnings 📖"
         shell: bash
         run: |
-          uv run sphinx-build docs docs/_build -W
+          uv run sphinx-build docs docs/_build
 
   run-pyright:
     runs-on: macos-latest

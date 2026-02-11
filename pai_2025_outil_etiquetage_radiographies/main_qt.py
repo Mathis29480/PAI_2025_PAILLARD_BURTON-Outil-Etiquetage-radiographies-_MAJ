@@ -15,11 +15,9 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QTabWidget,
     QVBoxLayout,
-    QWidget,
 )
 
 from pai_2025_outil_etiquetage_radiographies import analysis_export
-
 from pai_2025_outil_etiquetage_radiographies.annotations_tab import AnnotationsTab
 from pai_2025_outil_etiquetage_radiographies.auth_dialog import AuthDialog
 from pai_2025_outil_etiquetage_radiographies.data_manager import DataManager
@@ -60,7 +58,9 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+S"), self).activated.connect(self._save_current)
         QShortcut(QKeySequence("Ctrl+Z"), self).activated.connect(self._undo)
         QShortcut(QKeySequence("Ctrl+Shift+Z"), self).activated.connect(self._redo)
-        QShortcut(QKeySequence("Ctrl+E"), self).activated.connect(self._export_annotations)
+        QShortcut(QKeySequence("Ctrl+E"), self).activated.connect(
+            self._export_annotations
+        )
 
     def _save_current(self) -> None:
         if hasattr(self.annotations_tab, "save_annotations"):
@@ -81,9 +81,9 @@ class MainWindow(QMainWindow):
 
         file_menu = menubar.addMenu("Fichier")
         file_menu.addAction("Charger un dataset").triggered.connect(self._load_dataset)
-        file_menu.addAction("Recharger le dataset (nouvelles images)").triggered.connect(
-            self._reload_dataset
-        )
+        file_menu.addAction(
+            "Recharger le dataset (nouvelles images)"
+        ).triggered.connect(self._reload_dataset)
         file_menu.addSeparator()
         file_menu.addAction("Exporter les annotations").triggered.connect(
             self._export_annotations
@@ -100,9 +100,9 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(
             "Exporter co-occurrence (depuis le dataset chargé)"
         ).triggered.connect(self._export_cooccurrence)
-        tools_menu.addAction(
-            "Co-occurrence à partir d'un CSV"
-        ).triggered.connect(self._export_cooccurrence_from_csv)
+        tools_menu.addAction("Co-occurrence à partir d'un CSV").triggered.connect(
+            self._export_cooccurrence_from_csv
+        )
         tools_menu.addAction(
             "Générer rapport exemples de localisation (HTML)"
         ).triggered.connect(self._export_localization_report)
@@ -111,14 +111,19 @@ class MainWindow(QMainWindow):
         help_menu.addAction("À propos").triggered.connect(self._show_about)
 
     def _load_dataset(self) -> None:
-        folder = QFileDialog.getExistingDirectory(self, "Sélectionner le dossier du dataset")
+        folder = QFileDialog.getExistingDirectory(
+            self, "Sélectionner le dossier du dataset"
+        )
         if folder:
             self.data_manager.load_dataset(folder)
             self.visualization_tab.refresh_data()
             self.statusBar().showMessage(f"Dataset chargé depuis: {folder}")
 
     def _reload_dataset(self) -> None:
-        if not self.data_manager.dataset_path or not self.data_manager.dataset_path.exists():
+        if (
+            not self.data_manager.dataset_path
+            or not self.data_manager.dataset_path.exists()
+        ):
             QMessageBox.information(
                 self,
                 "Recharger",
@@ -174,7 +179,9 @@ class MainWindow(QMainWindow):
                 self.data_manager.import_annotations(filename)
                 if hasattr(self.annotations_tab, "refresh_annotations"):
                     self.annotations_tab.refresh_annotations()
-                QMessageBox.information(self, "Succès", "Annotations importées avec succès")
+                QMessageBox.information(
+                    self, "Succès", "Annotations importées avec succès"
+                )
             except Exception as e:
                 QMessageBox.critical(
                     self, "Erreur", f"Erreur lors de l'import: {str(e)}"
@@ -226,7 +233,11 @@ class MainWindow(QMainWindow):
                 csv_path, folder
             )
             msg = f"Matrice exportée :\n{csv_out}\n"
-            msg += f"Heatmap :\n{png_out}" if png_out else "Heatmap : installez matplotlib."
+            msg += (
+                f"Heatmap :\n{png_out}"
+                if png_out
+                else "Heatmap : installez matplotlib."
+            )
             QMessageBox.information(self, "Co-occurrence depuis CSV", msg)
         except Exception as e:
             QMessageBox.critical(self, "Erreur", str(e))
@@ -236,7 +247,10 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Rapport", "Chargez d'abord un dataset.")
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Enregistrer le rapport", "exemples_localisation.html", "HTML (*.html)"
+            self,
+            "Enregistrer le rapport",
+            "exemples_localisation.html",
+            "HTML (*.html)",
         )
         if not path:
             return

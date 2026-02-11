@@ -1,7 +1,6 @@
 """Tests pour le DataManager."""
 
 import csv
-import json
 from pathlib import Path
 
 import pytest
@@ -31,7 +30,17 @@ def temp_dataset_with_csv(tmp_path):
     csv_path = tmp_path / "Data_Entry_2017.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["Image Index", "Finding Labels", "Patient ID", "Patient Age", "Patient Gender", "View Position", "Follow-up #"])
+        w.writerow(
+            [
+                "Image Index",
+                "Finding Labels",
+                "Patient ID",
+                "Patient Age",
+                "Patient Gender",
+                "View Position",
+                "Follow-up #",
+            ]
+        )
         w.writerow(["a.png", "Atelectasis|Effusion", "P001", "45", "M", "PA", "1"])
         w.writerow(["b.png", "No Finding", "P002", "60", "F", "AP", "2"])
     return tmp_path
@@ -129,7 +138,17 @@ def test_add_annotation(temp_dataset):
     dm = DataManager()
     dm.load_dataset(str(temp_dataset))
     path = str(dm.images[0])
-    dm.add_annotation(path, {"type": "box", "x": 10, "y": 20, "width": 30, "height": 40, "pathology": "Atelectasis"})
+    dm.add_annotation(
+        path,
+        {
+            "type": "box",
+            "x": 10,
+            "y": 20,
+            "width": 30,
+            "height": 40,
+            "pathology": "Atelectasis",
+        },
+    )
     annos = dm.get_image_annotations(path)
     assert len(annos) == 1
     assert annos[0]["pathology"] == "Atelectasis"
@@ -157,7 +176,17 @@ def test_export_import_json(temp_dataset, tmp_path):
     dm = DataManager()
     dm.load_dataset(str(temp_dataset))
     path = str(dm.images[0])
-    dm.add_annotation(path, {"type": "box", "x": 0, "y": 0, "width": 10, "height": 10, "pathology": "Nodule"})
+    dm.add_annotation(
+        path,
+        {
+            "type": "box",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 10,
+            "pathology": "Nodule",
+        },
+    )
     json_path = tmp_path / "out.json"
     dm.export_annotations(str(json_path), "JSON")
 
@@ -174,7 +203,10 @@ def test_export_csv(temp_dataset, tmp_path):
     dm = DataManager()
     dm.load_dataset(str(temp_dataset))
     path = str(dm.images[0])
-    dm.add_annotation(path, {"type": "box", "x": 1, "y": 2, "width": 3, "height": 4, "pathology": "Mass"})
+    dm.add_annotation(
+        path,
+        {"type": "box", "x": 1, "y": 2, "width": 3, "height": 4, "pathology": "Mass"},
+    )
     csv_path = tmp_path / "out.csv"
     dm.export_annotations(str(csv_path), "CSV")
     assert csv_path.exists()
@@ -202,8 +234,22 @@ def test_import_csv(temp_dataset, tmp_path):
     csv_path = tmp_path / "annotations.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["Image", "Pathology", "X", "Y", "Width", "Height", "Author", "Date", "Confidence"])
-        w.writerow([path_str, "Pneumonia", 5, 10, 20, 30, "test_user", "2025-01-01", "1.0"])
+        w.writerow(
+            [
+                "Image",
+                "Pathology",
+                "X",
+                "Y",
+                "Width",
+                "Height",
+                "Author",
+                "Date",
+                "Confidence",
+            ]
+        )
+        w.writerow(
+            [path_str, "Pneumonia", 5, 10, 20, 30, "test_user", "2025-01-01", "1.0"]
+        )
     dm.import_annotations(str(csv_path))
     annos = dm.get_image_annotations(path_str)
     assert len(annos) == 1

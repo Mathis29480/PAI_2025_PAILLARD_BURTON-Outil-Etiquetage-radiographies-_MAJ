@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Dialogue d'authentification pour l'outil d'étiquetage.
 """
@@ -11,11 +10,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
     QVBoxLayout,
-    QHBoxLayout,
 )
 
 
@@ -90,13 +89,14 @@ class AuthDialog(QDialog):
         password = self.password_input.text()
 
         if not username:
-            QMessageBox.warning(
-                self, "Erreur", "Veuillez entrer un nom d'utilisateur"
-            )
+            QMessageBox.warning(self, "Erreur", "Veuillez entrer un nom d'utilisateur")
             return
 
         if username in self.users:
-            if self.users[username].get("password") and password != self.users[username]["password"]:
+            if (
+                self.users[username].get("password")
+                and password != self.users[username]["password"]
+            ):
                 QMessageBox.warning(self, "Erreur", "Mot de passe incorrect")
                 return
         else:

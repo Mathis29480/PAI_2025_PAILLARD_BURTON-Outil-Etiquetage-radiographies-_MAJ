@@ -1,15 +1,23 @@
-# -*- coding: utf-8 -*-
 """
 Onglet d'annotation des radiographies (canvas, liste, références, undo/redo).
 """
 
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from PIL import Image
-from PySide6.QtCore import Qt, QPoint
-from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QPixmap, QWheelEvent
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtGui import (
+    QColor,
+    QImage,
+    QMouseEvent,
+    QPainter,
+    QPen,
+    QPixmap,
+    QWheelEvent,
+)
 from PySide6.QtWidgets import (
     QColorDialog,
     QComboBox,
@@ -55,9 +63,7 @@ def _annotation_color(ann: dict) -> QColor:
     if hasattr(c, "red"):
         return c
     if isinstance(c, dict):
-        return QColor(
-            c.get("r", 255), c.get("g", 0), c.get("b", 0), c.get("a", 255)
-        )
+        return QColor(c.get("r", 255), c.get("g", 0), c.get("b", 0), c.get("a", 255))
     return QColor(255, 0, 0)
 
 
@@ -233,9 +239,7 @@ class AnnotationCanvas(QWidget):
             self.image = Image.open(image_path).convert("RGB")
             w, h = self.image.size
             bpl = w * 3
-            qimg = QImage(
-                self.image.tobytes(), w, h, bpl, QImage.Format.Format_RGB888
-            )
+            qimg = QImage(self.image.tobytes(), w, h, bpl, QImage.Format.Format_RGB888)
             self.image_pixmap = QPixmap.fromImage(qimg.copy())
             self.zoom_factor = 1.0
             self.pan_offset = QPoint(0, 0)
@@ -292,20 +296,14 @@ class AnnotationCanvas(QWidget):
                     self.current_annotation = None
                     self.start_point = None
                     self.update()
-        elif event.button() in (
-            Qt.MouseButton.MiddleButton,
-        ) or (
+        elif event.button() in (Qt.MouseButton.MiddleButton,) or (
             event.button() == Qt.MouseButton.LeftButton
             and event.modifiers() & Qt.KeyboardModifier.ShiftModifier
         ):
             self.last_pan_point = event.position().toPoint()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        if (
-            self.drawing_mode == "box"
-            and self.current_annotation
-            and self.start_point
-        ):
+        if self.drawing_mode == "box" and self.current_annotation and self.start_point:
             end_point = self._screen_to_image(event.position().toPoint())
             x = min(self.start_point.x(), end_point.x())
             y = min(self.start_point.y(), end_point.y())
@@ -328,9 +326,7 @@ class AnnotationCanvas(QWidget):
     def wheelEvent(self, event: QWheelEvent) -> None:
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             delta = event.angleDelta().y()
-            self.zoom_factor = max(
-                0.1, min(5.0, self.zoom_factor + delta / 1200.0)
-            )
+            self.zoom_factor = max(0.1, min(5.0, self.zoom_factor + delta / 1200.0))
             self.update()
         else:
             super().wheelEvent(event)
@@ -426,7 +422,9 @@ class AnnotationsTab(QWidget):
         nav_layout.addWidget(self.prev_image_btn)
         self.image_nav_label = QLabel("Image 0 / 0")
         self.image_nav_label.setStyleSheet("font-weight: bold;")
-        nav_layout.addWidget(self.image_nav_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        nav_layout.addWidget(
+            self.image_nav_label, alignment=Qt.AlignmentFlag.AlignCenter
+        )
         self.next_image_btn = QPushButton("Image suivante →")
         self.next_image_btn.clicked.connect(self.go_to_next_image)
         nav_layout.addWidget(self.next_image_btn)
@@ -438,11 +436,25 @@ class AnnotationsTab(QWidget):
         self.box_button.clicked.connect(lambda: self.set_drawing_mode("box"))
         tools_layout.addWidget(self.box_button)
         self.pathology_combo = QComboBox()
-        self.pathology_combo.addItems([
-            "Atelectasis", "Cardiomegaly", "Effusion", "Infiltration", "Mass",
-            "Nodule", "Pneumonia", "Pneumothorax", "Consolidation", "Edema",
-            "Emphysema", "Fibrosis", "Pleural_Thickening", "Hernia", "No Finding",
-        ])
+        self.pathology_combo.addItems(
+            [
+                "Atelectasis",
+                "Cardiomegaly",
+                "Effusion",
+                "Infiltration",
+                "Mass",
+                "Nodule",
+                "Pneumonia",
+                "Pneumothorax",
+                "Consolidation",
+                "Edema",
+                "Emphysema",
+                "Fibrosis",
+                "Pleural_Thickening",
+                "Hernia",
+                "No Finding",
+            ]
+        )
         self.pathology_combo.currentTextChanged.connect(self.on_pathology_changed)
         tools_layout.addWidget(QLabel("Pathologie:"))
         tools_layout.addWidget(self.pathology_combo)
@@ -534,7 +546,9 @@ class AnnotationsTab(QWidget):
             return
         try:
             idx = next(
-                i for i, p in enumerate(images) if str(p) == str(self.current_image_path)
+                i
+                for i, p in enumerate(images)
+                if str(p) == str(self.current_image_path)
             )
         except StopIteration:
             idx = self.data_manager.current_image_index
@@ -555,7 +569,9 @@ class AnnotationsTab(QWidget):
         else:
             try:
                 idx = next(
-                    i for i, p in enumerate(images) if str(p) == str(self.current_image_path)
+                    i
+                    for i, p in enumerate(images)
+                    if str(p) == str(self.current_image_path)
                 )
             except StopIteration:
                 idx = self.data_manager.current_image_index
@@ -573,7 +589,9 @@ class AnnotationsTab(QWidget):
         else:
             try:
                 idx = next(
-                    i for i, p in enumerate(images) if str(p) == str(self.current_image_path)
+                    i
+                    for i, p in enumerate(images)
+                    if str(p) == str(self.current_image_path)
                 )
             except StopIteration:
                 idx = self.data_manager.current_image_index
@@ -620,9 +638,20 @@ class AnnotationsTab(QWidget):
                 "Modifier annotation",
                 "Pathologie:",
                 [
-                    "Atelectasis", "Cardiomegaly", "Effusion", "Infiltration",
-                    "Mass", "Nodule", "Pneumonia", "Pneumothorax", "Consolidation",
-                    "Edema", "Emphysema", "Fibrosis", "Pleural_Thickening", "Hernia",
+                    "Atelectasis",
+                    "Cardiomegaly",
+                    "Effusion",
+                    "Infiltration",
+                    "Mass",
+                    "Nodule",
+                    "Pneumonia",
+                    "Pneumothorax",
+                    "Consolidation",
+                    "Edema",
+                    "Emphysema",
+                    "Fibrosis",
+                    "Pleural_Thickening",
+                    "Hernia",
                     "No Finding",
                 ],
                 current=ann.get("pathology", "Atelectasis"),

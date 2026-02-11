@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Gestionnaire de données pour l'outil d'étiquetage de radiographies.
 """
@@ -10,17 +9,16 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 from PySide6.QtGui import QColor
-from typing import Dict, List, Optional, Tuple
 
 
 class DataManager:
     """Gère les données (images, métadonnées, annotations)."""
 
     def __init__(self) -> None:
-        self.dataset_path: Optional[Path] = None
-        self.images: List[Path] = []
-        self.metadata: Dict[str, Dict] = {}
-        self.annotations: Dict[str, list] = {}
+        self.dataset_path: Path | None = None
+        self.images: list[Path] = []
+        self.metadata: dict[str, dict] = {}
+        self.annotations: dict[str, list] = {}
         self.current_image_index: int = 0
         self.annotations_dir = Path("annotations")
         self.annotations_dir.mkdir(exist_ok=True)
@@ -80,7 +78,9 @@ class DataManager:
                                 )
                         self.annotations[str(img_path)] = annotations
                 except Exception as e:
-                    print(f"Erreur lors du chargement des annotations pour {img_path}: {e}")
+                    print(
+                        f"Erreur lors du chargement des annotations pour {img_path}: {e}"
+                    )
                     self.annotations[str(img_path)] = []
             else:
                 self.annotations[str(img_path)] = []
@@ -114,7 +114,9 @@ class DataManager:
         if serializable_annotations:
             self._generate_reference_image(image_path, serializable_annotations)
 
-    def _generate_reference_image(self, image_path: str, annotations: List[Dict]) -> None:
+    def _generate_reference_image(
+        self, image_path: str, annotations: list[dict]
+    ) -> None:
         """Génère une image de référence avec les annotations dessinées."""
         try:
             img = Image.open(image_path).convert("RGB")
@@ -177,7 +179,9 @@ class DataManager:
                     pathology_dir.mkdir(exist_ok=True)
                     output_path = pathology_dir / f"{image_stem}_annotated.png"
                     img.save(output_path, "PNG")
-            if not pathologies_in_image or all(p == "Unknown" for p in pathologies_in_image):
+            if not pathologies_in_image or all(
+                p == "Unknown" for p in pathologies_in_image
+            ):
                 output_path = self.reference_images_dir / f"{image_stem}_annotated.png"
                 img.save(output_path, "PNG")
         except Exception as e:
@@ -217,17 +221,19 @@ class DataManager:
                         print(f"Erreur parsing bbox pour {image_name}: {e}")
                         continue
                     pathology = row.get("Finding Label", "")
-                    self.annotations[key].append({
-                        "type": "box",
-                        "x": x,
-                        "y": y,
-                        "width": w,
-                        "height": h,
-                        "pathology": pathology,
-                        "author": "auto_bbox",
-                        "date": datetime.now().isoformat(),
-                        "confidence": 0.5,
-                    })
+                    self.annotations[key].append(
+                        {
+                            "type": "box",
+                            "x": x,
+                            "y": y,
+                            "width": w,
+                            "height": h,
+                            "pathology": pathology,
+                            "author": "auto_bbox",
+                            "date": datetime.now().isoformat(),
+                            "confidence": 0.5,
+                        }
+                    )
         except Exception as e:
             print(f"Erreur lors du chargement des bounding boxes: {e}")
 
@@ -249,7 +255,9 @@ class DataManager:
                     try:
                         follow_num = int(follow_up)
                         base_date = datetime(2000, 1, 1)
-                        date = (base_date + timedelta(days=follow_num)).strftime("%Y-%m-%d")
+                        date = (base_date + timedelta(days=follow_num)).strftime(
+                            "%Y-%m-%d"
+                        )
                     except ValueError:
                         date = datetime.now().strftime("%Y-%m-%d")
                     self.metadata[str(image_path)] = {
@@ -265,7 +273,7 @@ class DataManager:
             print(f"Erreur lors du chargement du CSV: {e}")
             self._generate_default_metadata()
 
-    def _parse_pathologies(self, row: Dict) -> List[str]:
+    def _parse_pathologies(self, row: dict) -> list[str]:
         """Parse les pathologies depuis une ligne CSV (Finding Labels)."""
         labels = row.get("Finding Labels") or row.get("Finding Label") or ""
         labels = labels.strip()
@@ -286,21 +294,21 @@ class DataManager:
                 "filename": img_path.name,
             }
 
-    def get_current_image(self) -> Optional[str]:
+    def get_current_image(self) -> str | None:
         """Retourne le chemin de l'image actuelle."""
         if 0 <= self.current_image_index < len(self.images):
             return str(self.images[self.current_image_index])
         return None
 
-    def get_image_metadata(self, image_path: str) -> Dict:
+    def get_image_metadata(self, image_path: str) -> dict:
         """Retourne les métadonnées d'une image."""
         return self.metadata.get(image_path, {})
 
-    def get_image_annotations(self, image_path: str) -> List[Dict]:
+    def get_image_annotations(self, image_path: str) -> list[dict]:
         """Retourne les annotations d'une image."""
         return self.annotations.get(image_path, [])
 
-    def get_statistics(self) -> Dict:
+    def get_statistics(self) -> dict:
         """Retourne les statistiques des annotations."""
         stats = {
             "total_images": len(self.images),
@@ -322,7 +330,7 @@ class DataManager:
                 )
         return stats
 
-    def filter_images(self, filters: Dict) -> List[str]:
+    def filter_images(self, filters: dict) -> list[str]:
         """Filtre les images selon les critères."""
         filtered = []
         for img_path in self.images:
@@ -335,7 +343,10 @@ class DataManager:
                 if metadata.get("sex", "").upper() != filters["sex"].upper():
                     match = False
             if filters.get("view") and filters["view"] != "Toutes":
-                if metadata.get("view", "").strip().upper() != filters["view"].strip().upper():
+                if (
+                    metadata.get("view", "").strip().upper()
+                    != filters["view"].strip().upper()
+                ):
                     match = False
             if filters.get("date_min"):
                 if (metadata.get("date", "") or "") < filters["date_min"]:
@@ -384,7 +395,7 @@ class DataManager:
 
     def get_cooccurrence_data(
         self, from_csv_only: bool = True
-    ) -> Tuple[List[str], List[List[int]]]:
+    ) -> tuple[list[str], list[list[int]]]:
         """Matrice de co-occurrence des pathologies (métadonnées CSV ou annotations)."""
         labels = list(self.PATHOLOGY_ORDER)
         n = len(labels)
@@ -409,27 +420,25 @@ class DataManager:
                     matrix[idx1][idx2] += 1
         return labels, matrix
 
-    def add_annotation(self, image_path: str, annotation: Dict) -> None:
+    def add_annotation(self, image_path: str, annotation: dict) -> None:
         """Ajoute une annotation à une image."""
         if image_path not in self.annotations:
             self.annotations[image_path] = []
         self.annotations[image_path].append(annotation)
 
     def update_annotation(
-        self, image_path: str, annotation_id: int, annotation: Dict
+        self, image_path: str, annotation_id: int, annotation: dict
     ) -> None:
         """Met à jour une annotation."""
-        if (
-            image_path in self.annotations
-            and 0 <= annotation_id < len(self.annotations[image_path])
+        if image_path in self.annotations and 0 <= annotation_id < len(
+            self.annotations[image_path]
         ):
             self.annotations[image_path][annotation_id] = annotation
 
     def delete_annotation(self, image_path: str, annotation_id: int) -> None:
         """Supprime une annotation."""
-        if (
-            image_path in self.annotations
-            and 0 <= annotation_id < len(self.annotations[image_path])
+        if image_path in self.annotations and 0 <= annotation_id < len(
+            self.annotations[image_path]
         ):
             del self.annotations[image_path][annotation_id]
 
@@ -437,14 +446,15 @@ class DataManager:
         self,
         pathology: str,
         limit: int = 4,
-        exclude_path: Optional[str] = None,
-    ) -> List[Tuple[str, List[Dict]]]:
+        exclude_path: str | None = None,
+    ) -> list[tuple[str, list[dict]]]:
         """Images de référence avec annotations pour cette pathologie."""
-        def _norm(p: Optional[str]) -> Optional[str]:
+
+        def _norm(p: str | None) -> str | None:
             return str(Path(p).resolve()) if p else None
 
         exclude_norm = _norm(exclude_path)
-        result: List[Tuple[str, List[Dict]]] = []
+        result: list[tuple[str, list[dict]]] = []
         seen_paths: set = set()  # set of normalized paths
         for img_path, ann_list in self.annotations.items():
             img_path_str = str(img_path)
@@ -477,7 +487,10 @@ class DataManager:
                 if not stem or not anns:
                     continue
                 for img_path in self.images:
-                    if Path(img_path).stem == stem and _norm(str(img_path)) not in seen_paths:
+                    if (
+                        Path(img_path).stem == stem
+                        and _norm(str(img_path)) not in seen_paths
+                    ):
                         result.append((str(img_path), anns))
                         seen_paths.add(_norm(str(img_path)))
                         break
@@ -600,26 +613,32 @@ class DataManager:
             except Exception:
                 width, height = 1024, 1024
             image_id = len(coco_data["images"]) + 1
-            coco_data["images"].append({
-                "id": image_id,
-                "file_name": Path(img_path).name,
-                "width": width,
-                "height": height,
-            })
+            coco_data["images"].append(
+                {
+                    "id": image_id,
+                    "file_name": Path(img_path).name,
+                    "width": width,
+                    "height": height,
+                }
+            )
             for ann in annotations:
-                coco_data["annotations"].append({
-                    "id": annotation_id,
-                    "image_id": image_id,
-                    "category_id": category_map.get(ann.get("pathology", "Unknown"), 1),
-                    "bbox": [
-                        ann.get("x", 0),
-                        ann.get("y", 0),
-                        ann.get("width", 0),
-                        ann.get("height", 0),
-                    ],
-                    "area": ann.get("width", 0) * ann.get("height", 0),
-                    "iscrowd": 0,
-                })
+                coco_data["annotations"].append(
+                    {
+                        "id": annotation_id,
+                        "image_id": image_id,
+                        "category_id": category_map.get(
+                            ann.get("pathology", "Unknown"), 1
+                        ),
+                        "bbox": [
+                            ann.get("x", 0),
+                            ann.get("y", 0),
+                            ann.get("width", 0),
+                            ann.get("height", 0),
+                        ],
+                        "area": ann.get("width", 0) * ann.get("height", 0),
+                        "iscrowd": 0,
+                    }
+                )
                 annotation_id += 1
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(coco_data, f, indent=2, ensure_ascii=False)
@@ -702,13 +721,15 @@ class DataManager:
                     continue
                 if img_path not in self.annotations:
                     self.annotations[img_path] = []
-                self.annotations[img_path].append({
-                    "pathology": row.get("Pathology", ""),
-                    "x": float(row.get("X", 0)),
-                    "y": float(row.get("Y", 0)),
-                    "width": float(row.get("Width", 0)),
-                    "height": float(row.get("Height", 0)),
-                    "author": row.get("Author", ""),
-                    "date": row.get("Date", ""),
-                    "confidence": float(row.get("Confidence", 1.0)),
-                })
+                self.annotations[img_path].append(
+                    {
+                        "pathology": row.get("Pathology", ""),
+                        "x": float(row.get("X", 0)),
+                        "y": float(row.get("Y", 0)),
+                        "width": float(row.get("Width", 0)),
+                        "height": float(row.get("Height", 0)),
+                        "author": row.get("Author", ""),
+                        "date": row.get("Date", ""),
+                        "confidence": float(row.get("Confidence", 1.0)),
+                    }
+                )

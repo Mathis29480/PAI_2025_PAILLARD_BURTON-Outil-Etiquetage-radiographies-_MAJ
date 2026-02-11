@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Export des analyses (matrice de co-occurrence, rapport HTML exemples de localisation).
 """
@@ -13,9 +12,20 @@ if TYPE_CHECKING:
     from pai_2025_outil_etiquetage_radiographies.data_manager import DataManager
 
 PATHOLOGY_ORDER = [
-    "Atelectasis", "Cardiomegaly", "Effusion", "Infiltration", "Mass", "Nodule",
-    "Pneumonia", "Pneumothorax", "Consolidation", "Edema", "Emphysema",
-    "Fibrosis", "Pleural_Thickening", "Hernia",
+    "Atelectasis",
+    "Cardiomegaly",
+    "Effusion",
+    "Infiltration",
+    "Mass",
+    "Nodule",
+    "Pneumonia",
+    "Pneumothorax",
+    "Consolidation",
+    "Edema",
+    "Emphysema",
+    "Fibrosis",
+    "Pleural_Thickening",
+    "Hernia",
 ]
 
 
@@ -87,6 +97,7 @@ def _draw_heatmap(ax: object, labels: list, matrix: list, title: str) -> None:
     import matplotlib.colors as mcolors
     import matplotlib.pyplot as plt
     import numpy as np
+
     n = len(labels)
     arr = np.array(matrix, dtype=float)
     arr_plot = np.where(arr > 0, arr, np.nan)
@@ -111,6 +122,7 @@ def export_cooccurrence_heatmap(
 ) -> bool:
     try:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
@@ -121,7 +133,9 @@ def export_cooccurrence_heatmap(
         return False
     fig, ax = plt.subplots(figsize=(10, 8))
     _draw_heatmap(
-        ax, labels, matrix,
+        ax,
+        labels,
+        matrix,
         "Matrice de co-occurrence des 14 pathologies thoraciques",
     )
     plt.tight_layout()
@@ -179,11 +193,15 @@ def export_cooccurrence_from_csv_file(csv_path: str, output_dir: str) -> tuple:
     png_out = out_dir / "cooccurrence_heatmap.png"
     try:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+
         if len(labels) > 0:
             fig, ax = plt.subplots(figsize=(10, 8))
-            _draw_heatmap(ax, labels, matrix, "Matrice de co-occurrence (à partir du CSV)")
+            _draw_heatmap(
+                ax, labels, matrix, "Matrice de co-occurrence (à partir du CSV)"
+            )
             plt.tight_layout()
             plt.savefig(png_out, dpi=150, bbox_inches="tight")
             plt.close()

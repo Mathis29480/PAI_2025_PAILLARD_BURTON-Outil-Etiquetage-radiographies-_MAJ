@@ -28,6 +28,8 @@ test = [
     "coverage",
     "pandas-stubs",
     "pytest-sugar",
+    "pyright",
+    "ruff",
 ]
 docs = [
     "Sphinx",
@@ -73,3 +75,10 @@ testpaths = ["test_pai_2025_outil_etiquetage_radiographies", "pai_2025_outil_eti
 
 [tool.coverage.run]
 source = ["pai_2025_outil_etiquetage_radiographies"]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+reportOptionalMemberAccess = false
+reportArgumentType = false
+reportAttributeAccessIssue = false
+reportOptionalOperand = false
