@@ -4,9 +4,8 @@ version = "0.1.0"
 description = ""
 
 authors = [
-    { name = "Mathis Paillard"},
-    { name = " Cristobal Burton"},
-    
+    { name = "Mathis Paillard" },
+    { name = "Cristobal Burton" },
 ]
 requires-python = ">=3.10, <3.14"
 readme = "README.md"
