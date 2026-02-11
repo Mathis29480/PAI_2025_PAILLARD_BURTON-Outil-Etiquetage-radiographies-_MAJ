@@ -10,7 +10,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 from PySide6.QtGui import QColor
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 
 class DataManager:
@@ -285,3 +285,126 @@ class DataManager:
                 "pathologies": [],
                 "filename": img_path.name,
             }
+
+    def get_current_image(self) -> Optional[str]:
+        """Retourne le chemin de l'image actuelle."""
+        if 0 <= self.current_image_index < len(self.images):
+            return str(self.images[self.current_image_index])
+        return None
+
+    def get_image_metadata(self, image_path: str) -> Dict:
+        """Retourne les métadonnées d'une image."""
+        return self.metadata.get(image_path, {})
+
+    def get_image_annotations(self, image_path: str) -> List[Dict]:
+        """Retourne les annotations d'une image."""
+        return self.annotations.get(image_path, [])
+
+    def get_statistics(self) -> Dict:
+        """Retourne les statistiques des annotations."""
+        stats = {
+            "total_images": len(self.images),
+            "annotated_images": sum(1 for annos in self.annotations.values() if annos),
+            "total_annotations": sum(len(annos) for annos in self.annotations.values()),
+            "annotations_by_pathology": {},
+            "annotations_by_author": {},
+            "average_time": 0,
+        }
+        for annotations in self.annotations.values():
+            for ann in annotations:
+                path = ann.get("pathology", "Unknown")
+                stats["annotations_by_pathology"][path] = (
+                    stats["annotations_by_pathology"].get(path, 0) + 1
+                )
+                author = ann.get("author", "Unknown")
+                stats["annotations_by_author"][author] = (
+                    stats["annotations_by_author"].get(author, 0) + 1
+                )
+        return stats
+
+    def filter_images(self, filters: Dict) -> List[str]:
+        """Filtre les images selon les critères."""
+        filtered = []
+        for img_path in self.images:
+            metadata = self.get_image_metadata(str(img_path))
+            match = True
+            if filters.get("pathology") and filters["pathology"] != "Toutes":
+                if filters["pathology"] not in metadata.get("pathologies", []):
+                    match = False
+            if filters.get("sex") and filters["sex"] != "Tous":
+                if metadata.get("sex", "").upper() != filters["sex"].upper():
+                    match = False
+            if filters.get("view") and filters["view"] != "Toutes":
+                if metadata.get("view", "").strip().upper() != filters["view"].strip().upper():
+                    match = False
+            if filters.get("date_min"):
+                if (metadata.get("date", "") or "") < filters["date_min"]:
+                    match = False
+            if filters.get("date_max"):
+                if (metadata.get("date", "") or "") > filters["date_max"]:
+                    match = False
+            if filters.get("age_min"):
+                try:
+                    age = int(str(metadata.get("age", "0")).replace("Y", ""))
+                    if age < filters["age_min"]:
+                        match = False
+                except ValueError:
+                    pass
+            if filters.get("age_max"):
+                try:
+                    age = int(str(metadata.get("age", "0")).replace("Y", ""))
+                    if age > filters["age_max"]:
+                        match = False
+                except ValueError:
+                    pass
+            if filters.get("has_annotations") is not None:
+                has_annos = len(self.get_image_annotations(str(img_path))) > 0
+                if has_annos != filters["has_annotations"]:
+                    match = False
+            if match:
+                filtered.append(str(img_path))
+        return filtered
+
+    PATHOLOGY_ORDER = [
+        "Atelectasis",
+        "Cardiomegaly",
+        "Effusion",
+        "Infiltration",
+        "Mass",
+        "Nodule",
+        "Pneumonia",
+        "Pneumothorax",
+        "Consolidation",
+        "Edema",
+        "Emphysema",
+        "Fibrosis",
+        "Pleural_Thickening",
+        "Hernia",
+    ]
+
+    def get_cooccurrence_data(
+        self, from_csv_only: bool = True
+    ) -> Tuple[List[str], List[List[int]]]:
+        """Matrice de co-occurrence des pathologies (métadonnées CSV ou annotations)."""
+        labels = list(self.PATHOLOGY_ORDER)
+        n = len(labels)
+        label_to_idx = {p: i for i, p in enumerate(labels)}
+        matrix = [[0] * n for _ in range(n)]
+        for img_path in self.images:
+            path_str = str(img_path)
+            pathologies = set(self.metadata.get(path_str, {}).get("pathologies", []))
+            if not pathologies and not from_csv_only:
+                for ann in self.annotations.get(path_str, []):
+                    p = ann.get("pathology")
+                    if p and p in label_to_idx:
+                        pathologies.add(p)
+            for p1 in pathologies:
+                if p1 not in label_to_idx:
+                    continue
+                idx1 = label_to_idx[p1]
+                for p2 in pathologies:
+                    if p2 not in label_to_idx:
+                        continue
+                    idx2 = label_to_idx[p2]
+                    matrix[idx1][idx2] += 1
+        return labels, matrix
