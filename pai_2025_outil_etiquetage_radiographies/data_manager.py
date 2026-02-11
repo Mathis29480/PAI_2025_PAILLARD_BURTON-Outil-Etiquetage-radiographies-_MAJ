@@ -501,3 +501,161 @@ class DataManager:
                 if for_pathology:
                     result.append((str(exclude_path), for_pathology))
         return result
+
+    def export_annotations(self, filename: str, format_type: str) -> None:
+        """Exporte les annotations (JSON, CSV, COCO, YOLO)."""
+        if format_type == "JSON":
+            self._export_json(filename)
+        elif format_type == "CSV":
+            self._export_csv(filename)
+        elif format_type == "COCO":
+            self._export_coco(filename)
+        elif format_type == "YOLO":
+            self._export_yolo(filename)
+
+    def _serialize_annotations_for_export(self, annotations: list) -> list:
+        """Convertit QColor en dict pour export JSON."""
+        out = []
+        for ann in annotations:
+            ann_copy = ann.copy()
+            if "color" in ann_copy and hasattr(ann_copy["color"], "red"):
+                c = ann_copy["color"]
+                ann_copy["color"] = {
+                    "r": c.red(),
+                    "g": c.green(),
+                    "b": c.blue(),
+                    "a": c.alpha(),
+                }
+            out.append(ann_copy)
+        return out
+
+    def _export_json(self, filename: str) -> None:
+        """Exporte en JSON."""
+        all_data = {}
+        for img_path, annotations in self.annotations.items():
+            if annotations:
+                all_data[img_path] = {
+                    "metadata": self.get_image_metadata(img_path),
+                    "annotations": self._serialize_annotations_for_export(annotations),
+                }
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(all_data, f, indent=2, ensure_ascii=False)
+
+    def _export_csv(self, filename: str) -> None:
+        """Exporte en CSV."""
+        with open(filename, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                [
+                    "Image",
+                    "Pathology",
+                    "X",
+                    "Y",
+                    "Width",
+                    "Height",
+                    "Author",
+                    "Date",
+                    "Confidence",
+                ]
+            )
+            for img_path, annotations in self.annotations.items():
+                for ann in annotations:
+                    writer.writerow(
+                        [
+                            img_path,
+                            ann.get("pathology", ""),
+                            ann.get("x", 0),
+                            ann.get("y", 0),
+                            ann.get("width", 0),
+                            ann.get("height", 0),
+                            ann.get("author", ""),
+                            ann.get("date", ""),
+                            ann.get("confidence", 1.0),
+                        ]
+                    )
+
+    def _export_coco(self, filename: str) -> None:
+        """Exporte en format COCO."""
+        coco_data = {
+            "info": {"description": "Radiography annotations"},
+            "images": [],
+            "annotations": [],
+            "categories": [],
+        }
+        pathologies = set()
+        for annotations in self.annotations.values():
+            for ann in annotations:
+                pathologies.add(ann.get("pathology", "Unknown"))
+        category_map = {path: idx + 1 for idx, path in enumerate(sorted(pathologies))}
+        coco_data["categories"] = [
+            {"id": idx, "name": name} for name, idx in category_map.items()
+        ]
+        annotation_id = 1
+        for img_path, annotations in self.annotations.items():
+            if not annotations:
+                continue
+            try:
+                img = Image.open(img_path)
+                width, height = img.size
+            except Exception:
+                width, height = 1024, 1024
+            image_id = len(coco_data["images"]) + 1
+            coco_data["images"].append({
+                "id": image_id,
+                "file_name": Path(img_path).name,
+                "width": width,
+                "height": height,
+            })
+            for ann in annotations:
+                coco_data["annotations"].append({
+                    "id": annotation_id,
+                    "image_id": image_id,
+                    "category_id": category_map.get(ann.get("pathology", "Unknown"), 1),
+                    "bbox": [
+                        ann.get("x", 0),
+                        ann.get("y", 0),
+                        ann.get("width", 0),
+                        ann.get("height", 0),
+                    ],
+                    "area": ann.get("width", 0) * ann.get("height", 0),
+                    "iscrowd": 0,
+                })
+                annotation_id += 1
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(coco_data, f, indent=2, ensure_ascii=False)
+
+    def _export_yolo(self, filename: str) -> None:
+        """Exporte en YOLO (dossier yolo_annotations + classes.txt)."""
+        output_dir = Path(filename).parent / "yolo_annotations"
+        output_dir.mkdir(exist_ok=True)
+        pathologies = set()
+        for annotations in self.annotations.values():
+            for ann in annotations:
+                pathologies.add(ann.get("pathology", "Unknown"))
+        with open(output_dir / "classes.txt", "w", encoding="utf-8") as f:
+            for path in sorted(pathologies):
+                f.write(f"{path}\n")
+        category_map = {path: idx for idx, path in enumerate(sorted(pathologies))}
+        for img_path, annotations in self.annotations.items():
+            if not annotations:
+                continue
+            try:
+                img = Image.open(img_path)
+                img_width, img_height = img.size
+            except Exception:
+                img_width, img_height = 1024, 1024
+            txt_file = output_dir / f"{Path(img_path).stem}.txt"
+            with open(txt_file, "w", encoding="utf-8") as f:
+                for ann in annotations:
+                    x = ann.get("x", 0)
+                    y = ann.get("y", 0)
+                    w = ann.get("width", 0)
+                    h = ann.get("height", 0)
+                    center_x = (x + w / 2) / img_width
+                    center_y = (y + h / 2) / img_height
+                    norm_w = w / img_width
+                    norm_h = h / img_height
+                    class_id = category_map.get(ann.get("pathology", "Unknown"), 0)
+                    f.write(
+                        f"{class_id} {center_x:.6f} {center_y:.6f} {norm_w:.6f} {norm_h:.6f}\n"
+                    )
