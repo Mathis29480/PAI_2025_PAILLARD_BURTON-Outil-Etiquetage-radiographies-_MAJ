@@ -12,7 +12,7 @@ readme = "README.md"
 dependencies = [
     "pandas[parquet]>=2,<3",
     "nicegui[native]>=2,<3",
-    "pyside6",
+    "pyside6>=6.5,<6.10",
     "Pillow>=10,<11",
     "matplotlib>=3.8,<4",
 ]
