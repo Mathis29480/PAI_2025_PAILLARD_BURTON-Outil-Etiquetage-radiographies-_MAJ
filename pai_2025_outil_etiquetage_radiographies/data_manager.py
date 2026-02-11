@@ -659,3 +659,56 @@ class DataManager:
                     f.write(
                         f"{class_id} {center_x:.6f} {center_y:.6f} {norm_w:.6f} {norm_h:.6f}\n"
                     )
+
+    def import_annotations(self, filename: str) -> None:
+        """Importe des annotations depuis un fichier JSON ou CSV."""
+        ext = Path(filename).suffix.lower()
+        if ext == ".json":
+            self._import_json(filename)
+        elif ext == ".csv":
+            self._import_csv(filename)
+
+    def _import_json(self, filename: str) -> None:
+        """Importe depuis JSON (convertit couleurs dict -> QColor)."""
+        with open(filename, encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return
+        for img_path, img_data in data.items():
+            if isinstance(img_data, dict) and "annotations" in img_data:
+                annotations = img_data["annotations"]
+            elif isinstance(img_data, list):
+                annotations = img_data
+            else:
+                continue
+            for ann in annotations:
+                if "color" in ann and isinstance(ann["color"], dict):
+                    c = ann["color"]
+                    ann["color"] = QColor(
+                        c.get("r", 255),
+                        c.get("g", 0),
+                        c.get("b", 0),
+                        c.get("a", 255),
+                    )
+            self.annotations[img_path] = annotations
+
+    def _import_csv(self, filename: str) -> None:
+        """Importe depuis CSV."""
+        with open(filename, encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                img_path = row.get("Image", "")
+                if not img_path:
+                    continue
+                if img_path not in self.annotations:
+                    self.annotations[img_path] = []
+                self.annotations[img_path].append({
+                    "pathology": row.get("Pathology", ""),
+                    "x": float(row.get("X", 0)),
+                    "y": float(row.get("Y", 0)),
+                    "width": float(row.get("Width", 0)),
+                    "height": float(row.get("Height", 0)),
+                    "author": row.get("Author", ""),
+                    "date": row.get("Date", ""),
+                    "confidence": float(row.get("Confidence", 1.0)),
+                })
