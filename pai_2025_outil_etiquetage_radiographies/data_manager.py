@@ -3,6 +3,8 @@
 Gestionnaire de données pour l'outil d'étiquetage de radiographies.
 """
 
+import csv
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from typing import List, Dict, Optional
@@ -34,3 +36,72 @@ class DataManager:
             self.images.extend(list(self.dataset_path.glob(f"**/*{ext}")))
             self.images.extend(list(self.dataset_path.glob(f"**/*{ext.upper()}")))
         self.images = sorted(set(self.images))
+
+        root_for_csv = self.dataset_path
+        if self.dataset_path.name.lower() == "images":
+            root_for_csv = self.dataset_path.parent
+
+        csv_files = list(root_for_csv.glob("**/*.csv"))
+        if csv_files:
+            data_entry = [f for f in csv_files if "Data_Entry" in f.name]
+            if data_entry:
+                self._load_metadata_from_csv(data_entry[0], root_for_csv)
+            else:
+                self._load_metadata_from_csv(csv_files[0], root_for_csv)
+        else:
+            self._generate_default_metadata()
+
+    def _load_metadata_from_csv(self, csv_path: Path, root_for_csv: Path) -> None:
+        """Charge les métadonnées depuis un fichier CSV (Data_Entry NIH)."""
+        try:
+            with open(csv_path, encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    image_name = row.get("Image Index", row.get("filename", ""))
+                    if not image_name:
+                        continue
+                    image_path = self.dataset_path / image_name
+                    if not image_path.exists():
+                        image_path = self.dataset_path / "images" / image_name
+                    if not image_path.exists():
+                        continue
+                    follow_up = row.get("Follow-up #", "000")
+                    try:
+                        follow_num = int(follow_up)
+                        base_date = datetime(2000, 1, 1)
+                        date = (base_date + timedelta(days=follow_num)).strftime("%Y-%m-%d")
+                    except ValueError:
+                        date = datetime.now().strftime("%Y-%m-%d")
+                    self.metadata[str(image_path)] = {
+                        "patient_id": row.get("Patient ID", ""),
+                        "age": row.get("Patient Age", ""),
+                        "sex": row.get("Patient Gender", ""),
+                        "view": row.get("View Position", ""),
+                        "date": date,
+                        "pathologies": self._parse_pathologies(row),
+                        "filename": image_name,
+                    }
+        except Exception as e:
+            print(f"Erreur lors du chargement du CSV: {e}")
+            self._generate_default_metadata()
+
+    def _parse_pathologies(self, row: Dict) -> List[str]:
+        """Parse les pathologies depuis une ligne CSV (Finding Labels)."""
+        labels = row.get("Finding Labels") or row.get("Finding Label") or ""
+        labels = labels.strip()
+        if not labels or labels == "No Finding":
+            return []
+        return [lbl.strip() for lbl in labels.split("|") if lbl.strip()]
+
+    def _generate_default_metadata(self) -> None:
+        """Génère des métadonnées par défaut pour les images."""
+        for img_path in self.images:
+            self.metadata[str(img_path)] = {
+                "patient_id": f"P{hash(str(img_path)) % 10000:04d}",
+                "age": "Unknown",
+                "sex": "Unknown",
+                "view": "PA",
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "pathologies": [],
+                "filename": img_path.name,
+            }
