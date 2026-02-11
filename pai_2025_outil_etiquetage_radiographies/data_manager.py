@@ -408,3 +408,96 @@ class DataManager:
                     idx2 = label_to_idx[p2]
                     matrix[idx1][idx2] += 1
         return labels, matrix
+
+    def add_annotation(self, image_path: str, annotation: Dict) -> None:
+        """Ajoute une annotation à une image."""
+        if image_path not in self.annotations:
+            self.annotations[image_path] = []
+        self.annotations[image_path].append(annotation)
+
+    def update_annotation(
+        self, image_path: str, annotation_id: int, annotation: Dict
+    ) -> None:
+        """Met à jour une annotation."""
+        if (
+            image_path in self.annotations
+            and 0 <= annotation_id < len(self.annotations[image_path])
+        ):
+            self.annotations[image_path][annotation_id] = annotation
+
+    def delete_annotation(self, image_path: str, annotation_id: int) -> None:
+        """Supprime une annotation."""
+        if (
+            image_path in self.annotations
+            and 0 <= annotation_id < len(self.annotations[image_path])
+        ):
+            del self.annotations[image_path][annotation_id]
+
+    def get_reference_images_for_pathology(
+        self,
+        pathology: str,
+        limit: int = 4,
+        exclude_path: Optional[str] = None,
+    ) -> List[Tuple[str, List[Dict]]]:
+        """Images de référence avec annotations pour cette pathologie."""
+        def _norm(p: Optional[str]) -> Optional[str]:
+            return str(Path(p).resolve()) if p else None
+
+        exclude_norm = _norm(exclude_path)
+        result: List[Tuple[str, List[Dict]]] = []
+        seen_paths: set = set()  # set of normalized paths
+        for img_path, ann_list in self.annotations.items():
+            img_path_str = str(img_path)
+            if exclude_norm and _norm(img_path_str) == exclude_norm:
+                continue
+            for_pathology = [
+                a
+                for a in ann_list
+                if a.get("pathology") == pathology
+                and (a.get("type") == "box" or ("x" in a and "width" in a))
+            ]
+            if for_pathology and _norm(img_path_str) not in seen_paths:
+                result.append((img_path_str, for_pathology))
+                seen_paths.add(_norm(img_path_str))
+            if len(result) >= limit:
+                return result
+        refs_dir = Path(__file__).resolve().parent / "pathology_references"
+        ref_file = refs_dir / f"{pathology.replace(' ', '_')}.json"
+        if ref_file.exists() and self.images:
+            try:
+                with open(ref_file, encoding="utf-8") as f:
+                    examples = json.load(f)
+            except Exception:
+                examples = []
+            for ex in examples:
+                if len(result) >= limit:
+                    break
+                stem = ex.get("image_stem", "")
+                anns = ex.get("annotations", [])
+                if not stem or not anns:
+                    continue
+                for img_path in self.images:
+                    if Path(img_path).stem == stem and _norm(str(img_path)) not in seen_paths:
+                        result.append((str(img_path), anns))
+                        seen_paths.add(_norm(str(img_path)))
+                        break
+        if not result and exclude_path:
+            ann_list = self.annotations.get(exclude_path) or self.annotations.get(
+                exclude_norm
+            )
+            if not ann_list and exclude_norm:
+                for k, v in self.annotations.items():
+                    if _norm(k) == exclude_norm:
+                        ann_list = v
+                        exclude_path = k
+                        break
+            if ann_list:
+                for_pathology = [
+                    a
+                    for a in ann_list
+                    if a.get("pathology") == pathology
+                    and (a.get("type") == "box" or ("x" in a and "width" in a))
+                ]
+                if for_pathology:
+                    result.append((str(exclude_path), for_pathology))
+        return result
